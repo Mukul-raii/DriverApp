@@ -55,26 +55,36 @@ class FirebaseAuthService {
   Future<void> authenticateUser(res) async {
     final url = dotenv.env['API_URL'];
     final idToken = await _auth.currentUser?.getIdToken();
-    final finalUrl = Uri.parse('$url/driver/auth');
+    final finalUrl = Uri.parse('$url/driver/auth/verify');
     final response = await http.post(
       finalUrl,
       headers: {'Content-Type': 'application/json'},
       body: json.encode({'idToken': idToken}),
     );
-    if (response.statusCode == 201) {
+    if (response.statusCode == 200) {
       final data = json.decode(response.body);
-      final idToken = response.headers['authorization'];
-      debugPrint("🔑 idToken: $idToken");
+      // Get the authorization token from response headers
+      final authToken = response.headers['authorization'];
+
+      debugPrint("🔑 Auth token from headers: $authToken");
+      debugPrint("🔑 Response data: $data");
+
+      // Save the token to SharedPreferences
       final prefs = await SharedPreferences.getInstance();
-      debugPrint("🔑 sving token ");
+      debugPrint("🔑 Saving token to SharedPreferences");
 
-      prefs.setString('authToken', idToken ?? '');
-      prefs.getString('authToken');
-      debugPrint("🔑  token saved  $prefs.getString('authToken')");
+      await prefs.setString('authToken', authToken ?? '');
 
-      debugPrint(data);
+      // Verify the token was saved
+      final savedToken = prefs.getString('authToken');
+      debugPrint("🔑 Saved token verification: $savedToken");
+
+      print('✅ Authentication successful: ${response.statusCode}');
     } else {
-      debugPrint('Error: ${response.statusCode}');
+      print(
+        '❌ Authentication failed: ${response.statusCode} - ${response.body}',
+      );
+      print('URL: $finalUrl');
     }
   }
 

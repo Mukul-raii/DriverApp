@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:driverapp/main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
@@ -17,12 +18,11 @@ class Rideservice {
     return token;
   }
 
-  // Example method to fetch rides
   Future<List<Map<String, dynamic>>> fetchRides() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('authToken');
     final res = await http.get(
-      Uri.parse('$url/driver/rides'),
+      Uri.parse('$url/driver/ride/rides'),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': token ?? '',
@@ -33,17 +33,9 @@ class Rideservice {
       final body = jsonDecode(res.body);
       debugPrint('Response: ${res.body}');
 
-      // If API returns { result: [...] } - YOUR CURRENT API STRUCTURE
-      if (body is Map && body['result'] is List) {
-        return List<Map<String, dynamic>>.from(body['result']);
-      }
-      // If API returns { rides: [...] }
-      else if (body is Map && body['rides'] is List) {
-        return List<Map<String, dynamic>>.from(body['rides']);
-      }
-      // If API directly returns [...]
-      else if (body is List) {
-        return List<Map<String, dynamic>>.from(body);
+      // API returns { data: [...] }
+      if (body is Map && body['data'] is List) {
+        return List<Map<String, dynamic>>.from(body['data']);
       }
     }
 
@@ -62,6 +54,29 @@ class Rideservice {
     );
     print('Fetching rides from $url');
     print(' Response: ${res.body}');
+    // Add your API call logic here
+  }
+
+  //Accept or reject ride
+
+  // Example method to fetch rides
+  Future<void> updateRideStatus(Map<String, dynamic> rideData) async {
+    // Use the url variable here for API calls
+    final res = await http.patch(
+      uriParse('driver/ride/update-status/${rideData['id']}'),
+      headers: {
+        'Content-Type': 'application/json',
+        "Authorization": await getToken(),
+      },
+      body: jsonEncode(rideData),
+    );
+    if (res.statusCode == 200) {
+      await Rideservice().fetchRides();
+      socketService.updateRideStatus(jsonDecode(res.body));
+      print('✅ Ride status updated: ${res.body}');
+    } else {
+      print('❌ Failed to update ride status: ${res.statusCode} - ${res.body}');
+    }
     // Add your API call logic here
   }
 }

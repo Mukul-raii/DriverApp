@@ -20,12 +20,16 @@ class SocketService {
     socket.connect();
 
     socket.onConnect((_) => print('✅ Connected to socket server'));
-    socket.emit('joinDriverRoom', 'r08gW54mzyZUf6bTa1FNJiiRj7X2');
+    socket.emit('joinDriverRoom', 'KBPT9XycSYXu2lNidAH4goOtdEu2');
+
+    socket.on("rideRequested", (data) async {
+      print("🚨 New ride request received: $data");
+      await Rideservice().fetchRides();
+    });
     socket.on("newRide", (data) async {
       print("🔄 Ride update received: $data");
       await Rideservice().fetchRides();
     });
-
     socket.onDisconnect((_) => print('❌ Disconnected from socket server'));
   }
 
@@ -37,5 +41,10 @@ class SocketService {
   void emitRideRequest(Map<String, dynamic> ride, String riderId) {
     print("📡 Emitting ride request for $riderId: $ride");
     socket.emit('rideRequest', {"ride": ride, "riderId": riderId});
+  }
+
+  void updateRideStatus(Map<String, dynamic> ride) {
+    print("🔄 Emitting ride status update: $ride");
+    socket.emit('rideStatusUpdate', ride);
   }
 }

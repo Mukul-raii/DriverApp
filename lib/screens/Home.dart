@@ -21,6 +21,9 @@ class _MyHomePageState extends State<MyHomePage> {
 
     // Listen for socket updates
     SocketService().initSocket();
+    SocketService().socket.on("rideRequested", (_) {
+      _loadRides();
+    });
     SocketService().socket.on("newRide", (_) {
       _loadRides();
     });
@@ -118,9 +121,39 @@ class HomeScreen extends StatelessWidget {
                 const SizedBox(height: 10),
                 Text("📍 From: ${ride['fromLocation'] ?? ''}"),
                 Text("🏁 To: ${ride['toLocation'] ?? ''}"),
-                Text("👤 Rider ID: ${ride['riderId'] ?? ''}"),
-                Text("🧑‍✈️ Driver ID: ${ride['driverId'] ?? 'Not Assigned'}"),
                 const SizedBox(height: 10),
+                if (ride['status'] == "REQUESTED")
+                  Row(
+                    children: [
+                      ElevatedButton(
+                        onPressed: () async {
+                          await Rideservice().updateRideStatus({
+                            "id": ride['id'],
+                            "status": "ACCEPTED",
+                          });
+                          await Rideservice().fetchRides();
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                        ),
+                        child: const Text("Accept"),
+                      ),
+                      const SizedBox(width: 10),
+                      ElevatedButton(
+                        onPressed: () async {
+                          await Rideservice().updateRideStatus({
+                            "id": ride['id'],
+                            "status": "REJECTED",
+                          });
+                          await Rideservice().fetchRides();
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                        ),
+                        child: const Text("Reject"),
+                      ),
+                    ],
+                  ),
                 Text(
                   "📌 Status: ${ride['status'] ?? ''}",
                   style: const TextStyle(fontWeight: FontWeight.bold),
