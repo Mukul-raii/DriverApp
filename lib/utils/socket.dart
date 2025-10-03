@@ -45,6 +45,6 @@ class SocketService {
 
   void updateRideStatus(Map<String, dynamic> ride) {
     print("🔄 Emitting ride status update: $ride");
-    socket.emit('rideStatusUpdate', ride);
+    socket.emit('getRideStatus', ride);
   }
 }

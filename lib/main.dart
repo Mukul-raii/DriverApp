@@ -55,7 +55,7 @@ class MyApp extends StatelessWidget {
       ),
       home: (authToken == null || authToken.isEmpty)
           ? const Loginscreen()
-          : const MyHomePage(title: 'Flutter Demo Home Page'),
+          : const MyHomePage(),
     );
   }
 }

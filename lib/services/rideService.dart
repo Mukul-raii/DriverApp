@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 final url = dotenv.env['API_URL'];
+final rideUrl = 'http://localhost:8002/api/v1/rider';
 
 class Rideservice {
   Future<String> getToken() async {
@@ -72,16 +73,59 @@ class Rideservice {
     );
     if (res.statusCode == 200) {
       await Rideservice().fetchRides();
-      socketService.updateRideStatus(jsonDecode(res.body));
+      rideData['status'] = jsonDecode(res.body)['data']['status'];
+      print(rideData['status']);
+      if (rideData['status'] == 'ACCEPTED') {
+        await acceptRide(rideData);
+      }
+      if (rideData['status'] == 'REJECTED') {
+        await rejectRide(rideData);
+      }
+      socketService.updateRideStatus(jsonDecode(res.body)['data']);
       print('✅ Ride status updated: ${res.body}');
     } else {
       print('❌ Failed to update ride status: ${res.statusCode} - ${res.body}');
     }
     // Add your API call logic here
   }
+
+  acceptRide(Map<String, dynamic> rideData) async {
+    final res = await http.patch(
+      rideUrlParse('ride/accept-ride'),
+      headers: {
+        'Content-Type': 'application/json',
+        "Authorization": await getToken(),
+      },
+      body: jsonEncode(rideData),
+    );
+    if (res.statusCode == 200) {
+    } else {
+      print('❌ Failed to accept ride: ${res.statusCode} - ${res.body}');
+    }
+  }
+
+  rejectRide(Map<String, dynamic> rideData) async {
+    final res = await http.patch(
+      rideUrlParse('ride/reject-ride'),
+      headers: {
+        'Content-Type': 'application/json',
+        "Authorization": await getToken(),
+      },
+      body: jsonEncode(rideData),
+    );
+    if (res.statusCode == 200) {
+    } else {
+      print('❌ Failed to reject ride: ${res.statusCode} - ${res.body}');
+    }
+  }
 }
 
 Uri uriParse(String path) {
   final parsedUrl = Uri.parse('$url/$path');
+  return parsedUrl;
+}
+
+Uri rideUrlParse(String path) {
+  final parsedUrl = Uri.parse('$rideUrl/$path');
   return parsedUrl;
 }
